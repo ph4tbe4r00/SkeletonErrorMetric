@@ -1,20 +1,28 @@
 %
 % XML parser
 %
+clear all;
 clc;
 
+JEFF_DATASET = 6;
+AMELIO_FUSION = 5;
+
+
 %%
+disp('Reading XMLs...');
 breadcrumbs = containers.Map();
 for j = 1:8
-    breadcrumbs = loadPietData(sprintf('dataset5/contour-%i.xml', j), breadcrumbs, j);
+    breadcrumbs = loadPietData(sprintf('../Data/dataset%u/contour-%i.xml',...
+                                JEFF_DATASET, j), breadcrumbs, j);
 end
+v = values(breadcrumbs);
+nProcess = length(v);
+disp('Done.')
 
 %%
 close all;
-v = values(breadcrumbs);
-nProcess = length(values);
 for j = 1:8
-    img = imread(sprintf('dataset5/%i.tif', j));
+    img = imread(sprintf('../Data/jeff_originals/%i.tif', j));
     figure, imshow(img);
     hold on;
     for i=1:nProcess,
@@ -33,8 +41,13 @@ end
 % would do the following
 
 % amelio's data --> "labeled"
-labeled = [];
+disp('Reading fusion data...');
+labeled = amelio_data_loader(...
+    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION));
+%% control+page up
+disp('Done.');
 
+disp('Computing entropies...');
 sequences = cell(nProcess, 1);
 entropies = NaN(nProcess, 1);
 for j = 1:nProcess
@@ -45,5 +58,6 @@ for j = 1:nProcess
     end
     entropies(j) = discrete_entropy(sequences{j});
 end
+disp('Done.');
 
-
+hist(entropies);
