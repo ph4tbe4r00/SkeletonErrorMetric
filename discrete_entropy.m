@@ -1,7 +1,14 @@
 function Hs = discrete_entropy(s)
 
 % get counts
-counts = hist(s, unique(s));
+
+us = unique(s);
+
+if length(us) > 1
+    counts = hist(s, unique(s));
+else
+    counts = length(s);
+end
 
 % normalize
 p = counts / length(s);

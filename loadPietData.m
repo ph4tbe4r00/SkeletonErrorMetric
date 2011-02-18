@@ -3,8 +3,9 @@
 %             data structures.
 %
 
-function breadcrumbs = loadPietData(filename, breadcrumbs, z, verbose)
-if nargin > 3,
+function breadcrumbs = loadPietData(filename, breadcrumbs, z, ...
+    minX, maxX, minY, maxY, cropOff, downsample, verbose)
+if nargin > 9,
     fVerbose = 1;
 else
     fVerbose = 0;
@@ -43,10 +44,12 @@ for i=1:length(contours),
         for j=1:length(contour_data),
             if (strcmp(contour_data(j).Name, 'value')),
                 pt = contour_data(j).Children.Attributes;
+                crumbValue = offset(str2double(pt(1).Value), str2double(pt(2).Value), ...
+                                z, minX, maxX, minY, maxY, cropOff, downsample);
                 if (isKey(breadcrumbs, name)),
-                    breadcrumbs(name) = [breadcrumbs(name); str2double(pt(1).Value), str2double(pt(2).Value), z];
+                    breadcrumbs(name) = [breadcrumbs(name); crumbValue];
                 else
-                    breadcrumbs(name) = [str2double(pt(1).Value), str2double(pt(2).Value), z];
+                    breadcrumbs(name) = [crumbValue];
                 end
                 
                 if (fVerbose),
@@ -58,4 +61,11 @@ for i=1:length(contours),
     end
 end
 
+end
+
+function [off] = offset(x, y, z, minX, maxX, minY, maxY, cropOff, downsample)
+    off = zeros(1,3);
+    off(1) = round(1/downsample*((x-minX)-cropOff));
+    off(2) = round(1/downsample*((y-minY)-((maxY-minY)/(maxX-minX)*cropOff)));
+    off(3) = z;
 end

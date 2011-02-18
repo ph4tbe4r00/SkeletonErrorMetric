@@ -12,11 +12,10 @@ disp('Reading XMLs...');
 breadcrumbs = containers.Map();
 for j = 1:8
     breadcrumbs = loadPietData(sprintf('../Data/dataset%u/contour-%i.xml',...
-                                JEFF_DATASET, j), breadcrumbs, j, ...
-                                1, 1380, 1928, 3876, 300, 4);
+                                JEFF_DATASET, j), breadcrumbs, ...
+                                1, 1380, 1928, 3876, 300, 4, j);
 end
 v = values(breadcrumbs);
-keyset = keys(breadcrumbs);
 nProcess = length(v);
 disp('Done.')
 
@@ -63,9 +62,8 @@ for j = 1:nProcess
             sequences{j}(k) = labeled(v{j}(k, 1), v{j}(k, 2), v{j}(k, 3));
         end
         %}
-        if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && v{j}(k,1) > 0 && v{j}(k,2) > 0),
-            sequences{j}(k) = labeled(v{j}(k, 1), v{j}(k, 2), v{j}(k, 3));
-            disp(sprintf('%s %d\n', keyset{j}, k));
+        if (v{j}(1,k) < size(labeled,1) && v{j}(2,k) < size(labeled,2) && v{j}(1,k) > 0 && v{j}(2,k) > 0),
+            sequences{j}(k) = labeled(v{j}(1, k), v{j}(2, k), v{j}(3, k));
         end
     end
     entropies(j) = discrete_entropy(sequences{j});
