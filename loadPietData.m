@@ -64,8 +64,12 @@ end
 end
 
 function [off] = offset(x, y, z, minX, maxX, minY, maxY, cropOff, downsample)
-    off = zeros(1,3);
-    off(1) = round(1/downsample*((x-minX)-cropOff));
-    off(2) = round(1/downsample*((y-minY)-((maxY-minY)/(maxX-minX)*cropOff)));
-    off(3) = z;
+    if ~isnan(minX)
+        off = zeros(1,3);
+        off(1) = round(1/downsample*((x-minX)-cropOff));
+        off(2) = round(1/downsample*((y-minY)-((maxY-minY)/(maxX-minX)*cropOff)));
+        off(3) = z;
+    else
+        off = [x y z];
+    end
 end
