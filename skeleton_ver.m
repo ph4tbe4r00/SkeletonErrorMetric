@@ -46,6 +46,11 @@ disp('Done.');
 disp('Computing entropies...');
 sequences = cell(nProcess, 1);
 entropies = NaN(nProcess, 1);
+control_entropies = NaN(nProcess, 1);  % control: random labels
+
+% nlabels = sum(cellfun(@(x) length(unique(x(~isnan(x)))), sequences));  % a joke
+nlabels = 10;
+
 for j = 1:nProcess
     nPoints = size(v{j}, 1);
     sequences{j} = NaN(nPoints, 1);
@@ -62,10 +67,13 @@ for j = 1:nProcess
         end
     end
     entropies(j) = discrete_entropy(sequences{j});
+    control_entropies(j) = discrete_entropy(ceil(rand(1, length(sequences{j}))*nlabels));
 end
 disp('Done.');
 
 hist(entropies);
+entropies
+
 
 
 %% JEFF
