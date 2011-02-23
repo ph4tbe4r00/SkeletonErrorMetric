@@ -3,7 +3,7 @@ clc;
 
 JEFF_DATASET = 6;
 AMELIO_FUSION = 5;
-SLICES = 8;
+SLICES = 3;
 
 %% Read in Piet data 
 disp('Reading XMLs...');
@@ -32,9 +32,9 @@ disp('Done.')
 
 %% Read in Amelio's data --> "labeled"
 disp('Reading fusion data...');
-labeled = amelio_data_loader(...
-    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION));
-
+[labeled, UnlabeledM] = amelio_data_loader(...
+    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
 disp('Done.');
 
 %% Compute rand error
@@ -55,6 +55,11 @@ for j = 1:nProcess,
             gt(k) = j; % we just map keyset{j} to j
             fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
             inRange = 1;
+            % if the current label lies inside a skeleton, we remove it 
+            % from the unlabeled set
+            if isKey(UnlabeledM, int2str(test(k))),
+                remove(UnlabeledM, int2str(test(k)));
+            end
         end
     end
     
@@ -62,13 +67,26 @@ for j = 1:nProcess,
         fprintf('\n');
         test = test(~isnan(test));
         gt = gt(~isnan(gt));
-        TestLabels = [TestLabels; int32(test)];
-        GTLabels = [GTLabels; int32(gt)];
+        TestLabels = [TestLabels; test];
+        GTLabels = [GTLabels; gt];
     end
 end
 
+% At this point, the unique set will contain those clusters in fusion that
+% do not have a label from the skeletons
+numUnlabeled = length(keys(UnlabeledM));
+fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
+
 TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
+
+% pad TestLabels with a unique name for each segement in Fusion that does
+% not have a skeleton
+TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+
+% pad GTLabels with 1 name for each segement in GT that does not have a
+% skeleton
+GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
 disp('Done.');
 
@@ -130,4 +148,4 @@ end
 
 %%
 disp('Computing rand error...');
-fprintf('Rand Index: %f\n', RandError(TestLabels, GTLabels));
+fprintf('Rand error: %f\n', RandError(TestLabels, GTLabels));

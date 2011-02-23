@@ -4,6 +4,7 @@
 clear all;
 clc;
 
+SLICES = 8;
 JEFF_DATASET = 6;
 AMELIO_FUSION = 5;
 
@@ -37,8 +38,8 @@ disp('Done.')
 
 % amelio's data --> "labeled"
 disp('Reading fusion data...');
-labeled = amelio_data_loader(...
-    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION));
+[labeled, uLabels] = amelio_data_loader(...
+    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
 
 %% control+page up
 disp('Done.');
