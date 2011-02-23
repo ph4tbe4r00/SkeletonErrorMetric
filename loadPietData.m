@@ -3,9 +3,10 @@
 %             data structures.
 %
 
-function breadcrumbs = loadPietData(filename, breadcrumbs, z, ...
+function breadcrumbs = loadPietData(filename, breadcrumbs, ...
+    breadcrumbsOriginal, z, ...
     minX, maxX, minY, maxY, cropOff, downsample, verbose)
-if nargin > 9,
+if nargin > 10,
     fVerbose = 1;
 else
     fVerbose = 0;
@@ -44,12 +45,23 @@ for i=1:length(contours),
         for j=1:length(contour_data),
             if (strcmp(contour_data(j).Name, 'value')),
                 pt = contour_data(j).Children.Attributes;
+                
+                % add offset data
                 crumbValue = offset(str2double(pt(1).Value), str2double(pt(2).Value), ...
                                 z, minX, maxX, minY, maxY, cropOff, downsample);
                 if (isKey(breadcrumbs, name)),
                     breadcrumbs(name) = [breadcrumbs(name); crumbValue];
                 else
                     breadcrumbs(name) = [crumbValue];
+                end
+              
+                % add original data
+                crumbValue2 = offset(str2double(pt(1).Value), str2double(pt(2).Value), ...
+                                z, NaN, NaN, NaN, NaN, NaN, NaN);
+                if (isKey(breadcrumbsOriginal, name)),
+                    breadcrumbsOriginal(name) = [breadcrumbsOriginal(name); crumbValue2];
+                else
+                    breadcrumbsOriginal(name) = [crumbValue2];
                 end
                 
                 if (fVerbose),

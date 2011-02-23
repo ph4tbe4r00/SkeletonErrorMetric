@@ -3,18 +3,31 @@ clc;
 
 JEFF_DATASET = 6;
 AMELIO_FUSION = 5;
+SLICES = 8;
 
-%% Read in Piet data (offset version)
+%% Read in Piet data 
 disp('Reading XMLs...');
 breadcrumbsOffset = containers.Map();
-for j = 1:8
-    breadcrumbsOffset = loadPietData(sprintf('../Data/dataset%u/contour-%i.xml',...
-                                JEFF_DATASET, j), breadcrumbsOffset, j, ...
-                                1-120, 1380-120, 1928+30, 3876+30, 300, 4);
+breadcrumbsOriginal = containers.Map();
+for j = 1:SLICES
+    breadcrumbsOffset = loadPietData( ...
+                            sprintf('../Data/dataset%u/contour-%i.xml', JEFF_DATASET, j), ...  % path
+                            breadcrumbsOffset, ...  % offset data
+                            breadcrumbsOriginal, ...% original data
+                            j, ...                  % slice
+                            1-120, ...              % xMin
+                            1380-120, ...           % xMax
+                            1928+30, ...            % yMin
+                            3876+30, ...            % yMax
+                            300, ...                % crop
+                            4);                     % downsample
 end
 v = values(breadcrumbsOffset);
 keyset = keys(breadcrumbsOffset);
 nProcess = length(v);
+
+vOriginal = values(breadcrumbsOriginal);
+
 disp('Done.')
 
 %% Read in Amelio's data --> "labeled"
@@ -58,6 +71,62 @@ TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
 
 disp('Done.');
+
+%% Plot data
+disp('Overlaying skeletons on fusion output...');
+for j = 1:1
+    img = imread(sprintf(...
+        '../Data/amelio-fusion-%d/fusion_overlay/z=%.2d.png', AMELIO_FUSION, j));
+    figure, imshow(img, 'InitialMagnification', 300);
+    hold on;
+    for i=1:nProcess,
+        zvals = v{i}(:,3)==j;  % values at this z-slice
+        if isempty(zvals)
+            continue;
+        end
+
+        toplot = v{i}(zvals,:);
+
+        if size(toplot, 1) == 1
+            col = [0 0 1];
+        else
+            col = rand(1,3);
+        end
+        
+        for k = 1:size(toplot, 1) % plot each point separately to check bounds
+            if (toplot(k,1) < size(labeled,2) && toplot(k,2) < size(labeled,1) && ...
+                    toplot(k,1) > 0 && toplot(k,2) > 0),
+                plot(toplot(k,1), toplot(k,2), '.', 'Color', col, 'MarkerSize', 20);
+            end
+        end
+    end
+end
+
+%% Plot original
+for j = 1:1
+    img = imread(sprintf(...
+        '../Data/jeff_originals/%d.tif', j));
+    figure, imshow(img, 'InitialMagnification', 25);
+    hold on;
+    for i=1:nProcess,
+        zvals = vOriginal{i}(:,3)==j;  % values at this z-slice
+        if isempty(zvals)
+            continue;
+        end
+
+        toplot = vOriginal{i}(zvals,:);
+
+        if size(toplot, 1) == 1
+            col = [0 0 1];
+        else
+            col = rand(1,3);
+        end
+        
+        for k = 1:size(toplot, 1) % plot each point separately to check bounds
+            plot(toplot(k,1), toplot(k,2), '.', 'Color', col, 'MarkerSize', 20);
+        end
+    end
+end
 
 %%
 disp('Computing rand error...');

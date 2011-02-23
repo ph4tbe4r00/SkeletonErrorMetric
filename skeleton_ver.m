@@ -7,7 +7,7 @@ clc;
 JEFF_DATASET = 6;
 AMELIO_FUSION = 5;
 
-%%
+%% offset version
 disp('Reading XMLs...');
 breadcrumbsOffset = containers.Map();
 for j = 1:8
@@ -18,8 +18,9 @@ end
 v = values(breadcrumbsOffset);
 keyset = keys(breadcrumbsOffset);
 nProcess = length(v);
-disp('Reading XML again (no offset)');
+
 %% the non-offset version
+disp('Reading XML again (no offset)');
 breadcrumbsOriginal = containers.Map();
 for j = 1:8
     breadcrumbsOriginal = loadPietData(sprintf('../Data/dataset%u/contour-%i.xml',...
@@ -30,8 +31,6 @@ vOriginal = values(breadcrumbsOriginal);
 
 disp('Done.')
 
-
-
 %%
 % then, if amelio's pixel labels were stored in a 3D integer array, we
 % would do the following
@@ -40,6 +39,7 @@ disp('Done.')
 disp('Reading fusion data...');
 labeled = amelio_data_loader(...
     sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION));
+
 %% control+page up
 disp('Done.');
 
@@ -55,15 +55,10 @@ for j = 1:nProcess
     nPoints = size(v{j}, 1);
     sequences{j} = NaN(nPoints, 1);
     for k = 1:nPoints
-        %{
-        if (v{j}(k,1) < size(labeled,1) && v{j}(k,2) < size(labeled,2)),
-            sequences{j}(k) = labeled(v{j}(k, 1), v{j}(k, 2), v{j}(k, 3));
-        end
-        %}
         if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && ...
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
             sequences{j}(k) = labeled(v{j}(k, 1), v{j}(k, 2), v{j}(k, 3));
-            fprintf('%s %d\n', keyset{j}, k);
+            fprintf('%s %d %d\n', keyset{j}, sequences{j}(k), k);
         end
     end
     entropies(j) = discrete_entropy(sequences{j});
@@ -73,8 +68,6 @@ disp('Done.');
 
 hist(entropies);
 entropies
-
-
 
 %% JEFF
 

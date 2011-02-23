@@ -1,0 +1,15 @@
+function [rLabels] = remapLabels(labels)
+
+remapM = containers.Map();
+uLabels = unique(labels);
+for i = 1:length(uLabels),
+    remapM(int2suLabels(i)) = i-1;
+end
+
+rLabels = zeros(size(labels));
+for i = 1:length(labels),
+    rLabels(i) = remapM(labels(i));
+end
+
+end
+
