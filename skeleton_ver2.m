@@ -1,9 +1,9 @@
 clear all;
 clc;
 
-JEFF_DATASET = 6;
+JEFF_DATASET = 7;
 AMELIO_FUSION = 5;
-SLICES = 3;
+SLICES = 8;
 
 %% Read in Piet data 
 disp('Reading XMLs...');
@@ -51,7 +51,8 @@ for j = 1:nProcess,
     for k = 1:nPoints,
         if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && ...
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
-            test(k) = labeled(v{j}(k,1), v{j}(k,2), v{j}(k,3));
+            v{j}
+            test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
             gt(k) = j; % we just map keyset{j} to j
             fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
             inRange = 1;
@@ -82,17 +83,18 @@ GTLabels = remapLabels(GTLabels);
 
 % pad TestLabels with a unique name for each segement in Fusion that does
 % not have a skeleton
-TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+%TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
 
 % pad GTLabels with 1 name for each segement in GT that does not have a
 % skeleton
-GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
+%GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
 disp('Done.');
 
 %% Plot data
+%{
 disp('Overlaying skeletons on fusion output...');
-for j = 1:1
+for j = 1:SLICES
     img = imread(sprintf(...
         '../Data/amelio-fusion-%d/fusion_overlay/z=%.2d.png', AMELIO_FUSION, j));
     figure, imshow(img, 'InitialMagnification', 300);
@@ -119,9 +121,10 @@ for j = 1:1
         end
     end
 end
-
+%}
 %% Plot original
-for j = 1:1
+%{
+for j = 1:SLICES
     img = imread(sprintf(...
         '../Data/jeff_originals/%d.tif', j));
     figure, imshow(img, 'InitialMagnification', 25);
@@ -145,7 +148,7 @@ for j = 1:1
         end
     end
 end
-
+%}
 %%
 disp('Computing rand error...');
 fprintf('Rand error: %f\n', RandError(TestLabels, GTLabels));
