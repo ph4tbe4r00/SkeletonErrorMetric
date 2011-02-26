@@ -1,7 +1,7 @@
 clear all;
 clc;
 
-JEFF_DATASET = 6;
+JEFF_DATASET = 9;
 AMELIO_FUSION = 5;
 SLICES = 8;
 
@@ -32,22 +32,20 @@ disp('Done.')
 
 %% Read in Amelio's data --> "labeled"
 disp('Reading fusion data...');
-[labeled, uLabels] = amelio_data_loader(...
+[labeled, UnlabeledM] = amelio_data_loader(...
     sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
-
-length(uLabels
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
 disp('Done.');
+
+%% Read in Verena's data --> "labeled"
+disp('Reading Aglomerate clustering data...')
+[
 
 %% Compute rand error
 disp('Preparing vectors...');
 
 TestLabels = [];
 GTLabels = [];
-
-UnlabeledM = containers.Map();
-for j = 1:length(uLabels),
-    UnlabeledM(int2str(uLabels(i))) = 1;
-end
 
 for j = 1:nProcess,
     nPoints = size(v{j}, 1);
@@ -57,10 +55,12 @@ for j = 1:nProcess,
     for k = 1:nPoints,
         if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && ...
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
-            test(k) = labeled(v{j}(k,1), v{j}(k,2), v{j}(k,3));
+            test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
             gt(k) = j; % we just map keyset{j} to j
             fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
             inRange = 1;
+            % if the current label lies inside a skeleton, we remove it 
+            % from the unlabeled set
             if isKey(UnlabeledM, int2str(test(k))),
                 remove(UnlabeledM, int2str(test(k)));
             end
@@ -71,23 +71,33 @@ for j = 1:nProcess,
         fprintf('\n');
         test = test(~isnan(test));
         gt = gt(~isnan(gt));
-        TestLabels = [TestLabels; int32(test)];
-        GTLabels = [GTLabels; int32(gt)];
+        TestLabels = [TestLabels; test];
+        GTLabels = [GTLabels; gt];
     end
 end
 
+% At this point, the unique set will contain those clusters in fusion that
+% do not have a label from the skeletons
 numUnlabeled = length(keys(UnlabeledM));
+fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
 
 TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
+
+% pad TestLabels with a unique name for each segement in Fusion that does
+% not have a skeleton
 TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+
+% pad GTLabels with 1 name for each segement in GT that does not have a
+% skeleton
 GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
 disp('Done.');
 
 %% Plot data
+%{
 disp('Overlaying skeletons on fusion output...');
-for j = 1:1
+for j = 1:SLICES
     img = imread(sprintf(...
         '../Data/amelio-fusion-%d/fusion_overlay/z=%.2d.png', AMELIO_FUSION, j));
     figure, imshow(img, 'InitialMagnification', 300);
@@ -114,9 +124,10 @@ for j = 1:1
         end
     end
 end
-
+%}
 %% Plot original
-for j = 1:1
+%{
+for j = 1:SLICES
     img = imread(sprintf(...
         '../Data/jeff_originals/%d.tif', j));
     figure, imshow(img, 'InitialMagnification', 25);
@@ -140,7 +151,7 @@ for j = 1:1
         end
     end
 end
-
+%}
 %%
 disp('Computing rand error...');
 fprintf('Rand error: %f\n', RandError(TestLabels, GTLabels));

@@ -1,7 +1,10 @@
 clear all;
 clc;
 
-JEFF_DATASET = 7;
+USE_AMELIO = 0;
+USE_VERENA = mod(USE_AMELIO+1,2);
+
+JEFF_DATASET = 9;
 AMELIO_FUSION = 5;
 SLICES = 8;
 
@@ -31,11 +34,21 @@ vOriginal = values(breadcrumbsOriginal);
 disp('Done.')
 
 %% Read in Amelio's data --> "labeled"
-disp('Reading fusion data...');
-[labeled, UnlabeledM] = amelio_data_loader(...
-    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
+if USE_AMELIO
+    disp('Reading fusion data...');
+    [labeled, UnlabeledM] = amelio_data_loader(...
+        sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
+    fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+    disp('Done.');
+end
+
+%% Read in Verena's data --> "labeled"
+if USE_VERENA
+    disp('Reading Aglomerate clustering data...')
+    [labeled, UnlabeledM] = verena_data_loader(SLICES);
+    fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+    disp('Done.');
+end
 
 %% Compute rand error
 disp('Preparing vectors...');
@@ -51,7 +64,6 @@ for j = 1:nProcess,
     for k = 1:nPoints,
         if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && ...
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
-            v{j}
             test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
             gt(k) = j; % we just map keyset{j} to j
             fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
@@ -83,11 +95,11 @@ GTLabels = remapLabels(GTLabels);
 
 % pad TestLabels with a unique name for each segement in Fusion that does
 % not have a skeleton
-%TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
 
 % pad GTLabels with 1 name for each segement in GT that does not have a
 % skeleton
-%GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
+GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
 disp('Done.');
 

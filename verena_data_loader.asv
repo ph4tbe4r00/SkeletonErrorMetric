@@ -1,0 +1,7 @@
+function [out, UnlabeledM] = verena_data_loader(folder, slices)
+
+load for_dan;
+out = labOut;
+
+end
+
