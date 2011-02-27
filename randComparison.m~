@@ -4,12 +4,18 @@ clear all; close all; clc;
 % fusion, verena, b-lp, thresholded weights, MHVS
 JEFF_DATASET = 9;
 SLICES = 8;
+BLP_WEIGHTS_TESS_THRESH = 100;
+WEIGHTS_THRESHOLD = 0;
 
 
+%%%%
+VOLUME = 1;
 
-%%
+volume_offsets = [1-120; 1380-120; 1928+30; 3876+30];
+%%%%
+
 %% Read in Piet data 
-disp('Reading XMLs...');
+fprintf('Reading XMLs...');
 breadcrumbsOffset = containers.Map();
 breadcrumbsOriginal = containers.Map();
 for j = 1:SLICES
@@ -18,10 +24,10 @@ for j = 1:SLICES
                             breadcrumbsOffset, ...  % offset data
                             breadcrumbsOriginal, ...% original data
                             j, ...                  % slice
-                            1-120, ...              % xMin
-                            1380-120, ...           % xMax
-                            1928+30, ...            % yMin
-                            3876+30, ...            % yMax
+                     volume_offsets(1, VOLUME), ... % xMin
+                            volume_offsets(2, VOLUME), ... % xMax
+                            volume_offsets(3, VOLUME), ... % yMin
+                            volume_offsets(4, VOLUME), ... % yMax
                             300, ...                % crop
                             4);                     % downsample
 end
@@ -31,7 +37,7 @@ nProcess = length(v);
 
 vOriginal = values(breadcrumbsOriginal);
 
-disp('Done.')
+fprintf('    Done.\n')
 
 
 
@@ -42,49 +48,67 @@ disp('Done.')
 %% Read in Amelio's data --> "labeled"
 AMELIO_FUSION = 5;
 
-disp('Reading fusion data...');
-[labeled] = amelio_data_loader(...
-    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
+fprintf('Reading fusion data...');
+[labeled] = amelio_data_loader('../Data/v2_outputs/amelio/fusion/', SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
+fprintf('     Done.\n');
+fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
 
 randerror(1) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
-
+fprintf('Fusion rand error = %.4f', randerror(1));
 
 %% Read in Verena's data --> "labeled"
-disp('Reading Aglomerate clustering data...')
+fprintf('Reading Aglomerate clustering data...');
 [labeled] = verena_data_loader(SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
+fprintf('     Done.\n');
+fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
 
-randerror(2) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
-
+randerror(2) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+fprintf('Verena rand error = %.4f', randerror(2));
 
 %% Read in b-lp data
-disp('Computing b-lp clustering...')
-[labeled] = blp_data_loader(SLICES);
+fprintf('Computing b-lp weights (for b-lp and threshold)...');
+blp_precomputing(SLICES, BLP_WEIGHTS_TESS_THRESH);
+fprintf('     Done.\n');
+
+fprintf('Computing b-lp clustering...');
+blp_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH);
+fprintf('     Done.\n');
+
+
+
+fprintf('Reading b-lp clustering data...');
+[labeled] = amelio_data_loader('../Data/v2_outputs/blp/fusion/', SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
+fprintf('     Done.\n');
+fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
 
-randerror(3) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
-
+randerror(3) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+fprintf('B-LP rand error = %.4f', randerror(3));
 
 %% Read in weights-threshold data
-disp('Computing weights-threshold clustering...')
-[labeled] = threshold_data_loader(SLICES);
+fprintf('Computing thresholded-weights clustering...')
+threshold_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH, WEIGHTS_THRESHOLD);
+fprintf('     Done.\n');
+%%
+fprintf('Reading thresholded-weights clustering data...');
+[labeled] = amelio_data_loader('../Data/v2_outputs/threshold/fusion/', SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
-randerror(4) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
+fprintf('     Done.\n');
+fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
+
+randerror(4) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+fprintf('Threshold rand error = %.4f', randerror(4));
+
 
 
 %% Read in MHVS data
-disp('Computing weights-threshold clustering...')
+fprintf('Computing weights-threshold clustering...');
 [labeled] = threshold_data_loader(SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
-randerror(5) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
+fprintf('     Done.\n');
+fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
+
+randerror(5) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+fprintf('MHVS rand error = %.4f', randerror(5));

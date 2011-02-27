@@ -1,5 +1,4 @@
-function [out] = blp_produce_output(slices, BLP_WEIGHTS_TESS_THRESH)
-
+function [out] = threshold_produce_output(slices, BLP_WEIGHTS_TESS_THRESH, threshold)
 
 n = slices;
 
@@ -11,27 +10,11 @@ addpath(PATH);
 load(sprintf('blp_weights_tessthresh_%d', BLP_WEIGHTS_TESS_THRESH))
 
 
-%%
-% create textfile
-current_dir = pwd;
-cd(PATH);
-fid = fopen('blp_temp_input.txt', 'w');
-fprintf(fid, '%u %u\n', nNodes, nNodes);
-for i = 1 : nEdges
-    fprintf(fid, '%u %u %f\n', rag(i, 1)-1, rag(i, 2)-1, weights(i));  %-1 to index from 0
-end
-fclose(fid);
-
-% run the thing
-system('./run_blp.sh > blp_temp_output.txt');
-
-fid = fopen('blp_temp_output.txt');
-x = cell2mat(textscan(fid, '%u %u %u\n'));
-x(:,1:2)=x(:,1:2)+1;
-
-cd(current_dir);
+%% thresholding version (bypass b-lp)
+x = [rag(weights > threshold, :) ones(sum(weights > threshold), 1)];
 
 %%
+
 % make into R matrix
 % x = [x; x(:,[2 1]) x(:,3)]; % 1->2 also needs a 2->1
 % R = accumarray({x(:,1), x(:,2)}, x(:,3));
@@ -56,6 +39,9 @@ end
 % image(labOut);
 %%
 
+
+
+
 out = labOut;
 
 my_map = jet(max(labOut(:)));
@@ -67,7 +53,7 @@ rgbi = origi;
 overlayi = origi;
 
 
-OUTPUT_PATH = '../Data/v2_outputs/blp/';
+OUTPUT_PATH = '../Data/v2_outputs/threshold/';
 
 for i = 1:n
     origi{i} = double(imread(sprintf('../Data/or/z=%.6u.png', 1)));
@@ -80,5 +66,3 @@ for i = 1:n
     imwrite(rgbi{i}, sprintf('%sfusion/z=%.2u.png', OUTPUT_PATH, i), 'png');
     imwrite(overlayi{i}, sprintf('%sfusion-overlay/z=%.2u.png', OUTPUT_PATH, i), 'png');
 end
-
-
