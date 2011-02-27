@@ -1,12 +1,32 @@
-function randerror = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v)
+function randerror = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, Z, SLICES)
 
+%% Read in Piet data 
+disp('Reading XMLs...');
+breadcrumbsOffset = containers.Map();
+breadcrumbsOriginal = containers.Map();
+for j = 1:SLICES
+    breadcrumbsOffset = loadPietData( ...
+                            sprintf('../Data/dataset%u/contour-%i.xml', JEFF_DATASET, j), ...  % path
+                            breadcrumbsOffset, ...  % offset data
+                            breadcrumbsOriginal, ...% original data
+                            j, ...                  % slice
+                            1-120, ...              % xMin
+                            1380-120, ...           % xMax
+                            1928+30, ...            % yMin
+                            3876+30, ...            % yMax
+                            300, ...                % crop
+                            4);                     % downsample
+end
+v = values(breadcrumbsOffset);
+keyset = keys(breadcrumbsOffset);
+nProcess = length(v);
 
-verbose = 0;
+vOriginal = values(breadcrumbsOriginal);
+
+disp('Done.')
 
 %% Compute rand error
-if verbose
-    disp('Preparing vectors...');
-end
+disp('Preparing vectors...');
 
 TestLabels = [];
 GTLabels = [];
@@ -21,9 +41,7 @@ for j = 1:nProcess,
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
             test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
             gt(k) = j; % we just map keyset{j} to j
-            if verbose
-                fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
-            end
+            fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
             inRange = 1;
             % if the current label lies inside a skeleton, we remove it 
             % from the unlabeled set
@@ -34,9 +52,7 @@ for j = 1:nProcess,
     end
     
     if inRange,
-        if verbose
-            fprintf('\n');
-        end
+        fprintf('\n');
         test = test(~isnan(test));
         gt = gt(~isnan(gt));
         TestLabels = [TestLabels; test];
@@ -47,9 +63,7 @@ end
 % At this point, the unique set will contain those clusters in fusion that
 % do not have a label from the skeletons
 numUnlabeled = length(keys(UnlabeledM));
-if verbose
-    fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
-end
+fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
 
 TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
@@ -62,9 +76,7 @@ GTLabels = remapLabels(GTLabels);
 % % skeleton
 % GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
-if verbose
-    disp('Done.');
-end
+disp('Done.');
 
 %% Plot data
 %{
@@ -125,10 +137,5 @@ for j = 1:SLICES
 end
 %}
 %%
-if verbose
-    disp('Computing rand error...');
-end
-randerror = RandError(TestLabels, GTLabels);
-if verbose
-    fprintf('Rand error: %f\n', randerror);
-end
+disp('Computing rand error...');
+fprintf('Rand error: %f\n', RandError(TestLabels, GTLabels));

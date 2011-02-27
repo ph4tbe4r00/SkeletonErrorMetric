@@ -1,0 +1,7 @@
+function out = amelio_data_loader(folder)
+
+out = NaN(276, 195, 8);
+
+for i = 1:8
+    x = imread(sprintf('%s/z=%.2u.png', i));
+end

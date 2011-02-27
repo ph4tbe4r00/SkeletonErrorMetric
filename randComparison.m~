@@ -1,0 +1,90 @@
+clear all; close all; clc;
+
+% compute rand errors for 5 different methods:
+% fusion, verena, b-lp, thresholded weights, MHVS
+JEFF_DATASET = 9;
+SLICES = 8;
+
+
+
+%%
+%% Read in Piet data 
+disp('Reading XMLs...');
+breadcrumbsOffset = containers.Map();
+breadcrumbsOriginal = containers.Map();
+for j = 1:SLICES
+    breadcrumbsOffset = loadPietData( ...
+                            sprintf('../Data/dataset%u/contour-%i.xml', JEFF_DATASET, j), ...  % path
+                            breadcrumbsOffset, ...  % offset data
+                            breadcrumbsOriginal, ...% original data
+                            j, ...                  % slice
+                            1-120, ...              % xMin
+                            1380-120, ...           % xMax
+                            1928+30, ...            % yMin
+                            3876+30, ...            % yMax
+                            300, ...                % crop
+                            4);                     % downsample
+end
+v = values(breadcrumbsOffset);
+keyset = keys(breadcrumbsOffset);
+nProcess = length(v);
+
+vOriginal = values(breadcrumbsOriginal);
+
+disp('Done.')
+
+
+
+
+
+
+
+%% Read in Amelio's data --> "labeled"
+AMELIO_FUSION = 5;
+
+disp('Reading fusion data...');
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+disp('Done.');
+
+randerror(1) = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+
+
+%% Read in Verena's data --> "labeled"
+disp('Reading Aglomerate clustering data...')
+[labeled] = verena_data_loader(SLICES);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+disp('Done.');
+
+randerror(2) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
+
+
+%% Read in b-lp data
+disp('Computing b-lp clustering...')
+[labeled] = blp_data_loader(SLICES);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+disp('Done.');
+
+randerror(3) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
+
+
+%% Read in weights-threshold data
+disp('Computing weights-threshold clustering...')
+[labeled] = threshold_data_loader(SLICES);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+disp('Done.');
+randerror(4) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
+
+
+%% Read in MHVS data
+disp('Computing weights-threshold clustering...')
+[labeled] = threshold_data_loader(SLICES);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
+disp('Done.');
+randerror(5) = skeleton_ver2(labeled, UnlabeledM, JEFF_DATASET, SLICES);
