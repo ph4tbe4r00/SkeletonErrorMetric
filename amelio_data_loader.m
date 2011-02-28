@@ -1,6 +1,7 @@
 function [out] = amelio_data_loader(folder, slices)
 
-out = NaN(276, 195, slices);
+% out = NaN(276, 195, slices);
+out = [];
 
 for i = 1:slices
     x = int32(imread(sprintf('%sz=%.2d.png', folder, i)));

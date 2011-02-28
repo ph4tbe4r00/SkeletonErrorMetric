@@ -9,11 +9,11 @@ WEIGHTS_THRESHOLD = 0;
 
 
 %%%%
-VOLUME = 1;
+VOLUME = 2;
 
 volume_offsets = [...
-    1-120   1380-120   1928+30   3876+30   ...
-                                           ...
+    1-120   1380-120   1928+30   3876+30  ;...
+    1549    3018       2247      3623     ;...
     ];
 %%%%
 
@@ -52,7 +52,8 @@ fprintf('    Done.\n')
 AMELIO_FUSION = 5;
 
 fprintf('Reading fusion data...');
-[labeled] = amelio_data_loader('../Data/v2_outputs/amelio/fusion/', SLICES);
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/v%d_outputs/amelio/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.\n');
 fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
@@ -82,7 +83,8 @@ fprintf('     Done.\n');
 
 
 fprintf('Reading b-lp clustering data...');
-[labeled] = amelio_data_loader('../Data/v2_outputs/blp/fusion/', SLICES);
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/v%d_outputs/blp/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.\n');
 fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
@@ -96,7 +98,8 @@ threshold_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH, WEIGHTS_THRESHOLD);
 fprintf('     Done.\n');
 %%
 fprintf('Reading thresholded-weights clustering data...');
-[labeled] = amelio_data_loader('../Data/v2_outputs/threshold/fusion/', SLICES);
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/v%d_outputs/threshold/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.\n');
 fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
@@ -107,8 +110,9 @@ fprintf('Threshold rand error = %.4f', randerror(4));
 
 
 %% Read in MHVS data
-fprintf('Computing weights-threshold clustering...');
-[labeled] = threshold_data_loader(SLICES);
+fprintf('Computing MHVS clustering...');
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/v%d_outputs/mhvs/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.\n');
 fprintf('     Number unique labels: %d\n', length(keys(UnlabeledM)));
