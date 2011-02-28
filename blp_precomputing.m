@@ -5,7 +5,7 @@ n = slices;
 PATH = sprintf('../Data/v%d_outputs/', VOLUME); 
 % relative path to directory with original images and scripts
 
-addpath(PATH);
+% addpath(PATH);
 
 tessi = cell(n, 1);
 labi = cell(n, 1);
@@ -32,7 +32,7 @@ fprintf('\n');
 %%
 weights = weights - mean(weights);
 weights = weights / std(weights);
-weights = weights + 0;
+weights = weights + 1;
 % weights = 0*weights;
 
 %%
@@ -54,7 +54,7 @@ end
 %%
 newweights = newweights - mean(newweights(:));
 newweights = newweights / std(newweights(:));
-newweights(newweights > 4) = 4;  % maximum of 5
+newweights(newweights > 4) = 4;
 newweights = exp(newweights);
 % newweights = newweights - 1;
 %%
