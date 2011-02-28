@@ -28,6 +28,7 @@ for i = 1 : n
 end
 labOut = lab;
 for i = 1:size(x,1)
+%     fprintf('%u of %u\n', i, size(x,1));
     oldreg = labOut(lab == x(i,1));  % find the label in the new image @ same location
     labOut(lab == x(i,2)) = oldreg(1);  %oldreg should all be the same
 end
