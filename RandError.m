@@ -1,4 +1,4 @@
-function randIndex = RandError(A, B)
+function [randIndex colMistakes rowMistakes] = RandError(A, B)
 % A and B must be the same size. they are matrices/vectors containing integer labels
 % returns NaN for images of size 1 pixel since there are no pairs
 

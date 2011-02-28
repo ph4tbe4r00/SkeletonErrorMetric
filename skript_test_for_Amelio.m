@@ -1,0 +1,93 @@
+function [out] = skript_test_for_Amelio(n, VOLUME, TESSLEVEL)
+verbose = 1;
+
+%currDir = pwd;
+%extract graph and region info
+%cd(vPath);
+%imgNames = dir('I00000*_seg.png');
+%cd(currDir);
+[graphInfo, regionInfo, NodeToImgM] = buildGraphAndRegionInfo(VOLUME, n, TESSLEVEL);
+
+disp('building weight Matrix');
+weightMatrixDist = buildGraphWeightMatrixDist(graphInfo, regionInfo);
+
+% We're gonna use our own weight matrix ... so we don't need the top?
+% Let's test it out with her Euclidean distance matrix first ...
+    
+disp('clustering');
+%clustering will halt if either maximum number of iterations (maxIter)
+%or maximum cost for merges (maxCost) is reached
+maxIter = 100; 
+maxCost = inf;
+%clusterIds is a vector of length n, which contains the object id for
+%each of the n regions in the volume
+tic;[clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBranching(weightMatrixDist, maxIter, graphInfo, maxCost);toc;
+
+%% Display data
+tmptmp = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
+orgImgs = zeros(size(tmptmp,1), size(tmptmp,2), 3);
+for i = 1:n
+    orgImgs(:,:,i) = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
+end
+for i = 1:n
+    seg = orgImgs(:,:,i);
+    for j = 1:length(clusterIds)
+        if NodeToImgM(int2str(j)) == i
+            seg(regionInfo(j).PixelIdxList) = clusterIds(j);
+        end
+    end
+    orgImgs(:,:,i) = seg;
+end
+
+my_map = jet(length(clusterIds));
+my_map = my_map(randperm(size(my_map, 1)),:);
+
+figure;
+for i = 1:n
+    subplot(1,8,i);
+    imshow(ind2rgb(orgImgs(:,:,i), my_map));
+end
+
+%%
+if verbose
+    fprintf('  Writing images...  ');
+end
+
+labOut = orgImgs;
+out = orgImgs;
+
+my_map = jet(max(labOut(:)));
+my_map = my_map(randperm(size(my_map, 1)),:);
+alpha = .75;
+
+origi = cell(n,1);
+rgbi = origi;
+overlayi = origi;
+
+
+OUTPUT_PATH = sprintf('../Data/v%d_outputs/verena/', VOLUME);
+
+for i = 1:n
+    origi{i} = double(imread(sprintf(...
+        '../Data/v%d_outputs/originals/z=%.6u.png', VOLUME, 1)));
+    origi{i} = repmat(origi{i}, [1 1 3]) / 255;
+    
+    rgbi{i} = ind2rgb(labOut(:,:,i), my_map);
+    overlayi{i} = alpha*origi{i} + (1-alpha)*rgbi{i};
+
+    imwrite(rgbi{i}, sprintf('%sfusion/z=%.2u.png', OUTPUT_PATH, i), 'png');
+    imwrite(overlayi{i}, sprintf('%sfusion-overlay/z=%.2u.png', OUTPUT_PATH, i), 'png');
+end
+
+%%
+%{
+%this part builds an image volume of the clustering solution, for visualization
+imsize = [276 195]; %size of the original images
+minClusterSize = 30; %minimal size of object in sections
+maxClusterSize = 31; %maximal size of object in sections
+doColorImages = true; %if checked output will be colored images with one
+                   %color per object
+numberOfValidClusters = buildImageVolumeOfClustering(graphInfo, regionInfo, clusterIds, imsize, minClusterSize, maxClusterSize, doColorImages);
+disp('nr of valid clusters:');
+disp(numberOfValidClusters)
+%}

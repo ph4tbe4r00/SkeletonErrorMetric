@@ -1,0 +1,83 @@
+
+%extract graph and region info
+system('cd ../Data/segsForVerena130');
+imgNames = dir('I00000*_seg.png');
+system('cd ../');
+[graphInfo, regionInfo, NodeToImgM] = buildGraphAndRegionInfo(imgNames);
+
+save('graphInfo.mat','graphInfo');
+save('regionInfo.mat','regionInfo');
+save('NodeToImgM.mat','NodeToImgM');
+
+%extract distance matrix as an example. I assume you substitute this
+%with your own weights.
+clear all
+disp('building weight Matrix');
+load regionInfo.mat
+load graphInfo.mat
+tic;
+disp('weightMatrixDist');
+weightMatrixDist = buildGraphWeightMatrixDist(graphInfo, regionInfo);
+save('weightMatrixDist.mat','weightMatrixDist');
+clear weightMatrixDist;
+toc;
+
+
+%cluster according to weightMatrix
+%clear all
+
+load graphInfo.mat
+load regionInfo.mat
+load weightMatrixDist.mat
+load NodeToImgM.mat   
+
+% We're gonna use our own weight matrix ... so we don't need the top?
+% Let's test it out with her Euclidean distance matrix first ...
+    
+disp('clustering');
+%clustering will halt if either maximum number of iterations (maxIter)
+%or maximum cost for merges (maxCost) is reached
+maxIter = 100; 
+maxCost = inf;
+%clusterIds is a vector of length n, which contains the object id for
+%each of the n regions in the volume
+tic;[clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBranching(weightMatrixDist, maxIter, graphInfo, maxCost);toc;
+
+%% Display data
+orgImgs = zeros(276, 195, 3);
+for i = 1:8
+    orgImgs(:,:,i) = imread(sprintf('I00000%d_seg.png', i));
+end
+NodeToImgM
+for i = 1:8
+    seg = orgImgs(:,:,i);
+    for j = 1:length(clusterIds)
+        if NodeToImgM(int2str(j)) == i
+            seg(regionInfo(j).PixelIdxList) = clusterIds(j);
+        end
+    end
+    orgImgs(:,:,i) = seg;
+end
+
+my_map = jet(length(clusterIds));
+my_map = my_map(randperm(size(my_map, 1)),:);
+
+figure;
+for i = 1:8
+    subplot(1,8,i);
+    imshow(ind2rgb(orgImgs(:,:,i), my_map));
+end
+
+
+%%
+%{
+%this part builds an image volume of the clustering solution, for visualization
+imsize = [276 195]; %size of the original images
+minClusterSize = 30; %minimal size of object in sections
+maxClusterSize = 31; %maximal size of object in sections
+doColorImages = true; %if checked output will be colored images with one
+                   %color per object
+numberOfValidClusters = buildImageVolumeOfClustering(graphInfo, regionInfo, clusterIds, imsize, minClusterSize, maxClusterSize, doColorImages);
+disp('nr of valid clusters:');
+disp(numberOfValidClusters)
+%}

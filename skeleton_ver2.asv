@@ -1,51 +1,18 @@
-clear all;
-clc;
+function [randerror col row] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v)
 
-JEFF_DATASET = 9;
-AMELIO_FUSION = 5;
-SLICES = 8;
 
-%% Read in Piet data 
-disp('Reading XMLs...');
-breadcrumbsOffset = containers.Map();
-breadcrumbsOriginal = containers.Map();
-for j = 1:SLICES
-    breadcrumbsOffset = loadPietData( ...
-                            sprintf('../Data/dataset%u/contour-%i.xml', JEFF_DATASET, j), ...  % path
-                            breadcrumbsOffset, ...  % offset data
-                            breadcrumbsOriginal, ...% original data
-                            j, ...                  % slice
-                            1-120, ...              % xMin
-                            1380-120, ...           % xMax
-                            1928+30, ...            % yMin
-                            3876+30, ...            % yMax
-                            300, ...                % crop
-                            4);                     % downsample
-end
-v = values(breadcrumbsOffset);
-keyset = keys(breadcrumbsOffset);
-nProcess = length(v);
-
-vOriginal = values(breadcrumbsOriginal);
-
-disp('Done.')
-
-%% Read in Amelio's data --> "labeled"
-disp('Reading fusion data...');
-[labeled, UnlabeledM] = amelio_data_loader(...
-    sprintf('../Data/amelio-fusion-%d/fusion/', AMELIO_FUSION), SLICES);
-fprintf('Number unique labels: %d\n', length(keys(UnlabeledM)));
-disp('Done.');
-
-%% Read in Verena's data --> "labeled"
-disp('Reading Aglomerate clustering data...')
-[
+verbose = 1;
 
 %% Compute rand error
-disp('Preparing vectors...');
+if verbose
+    disp('Preparing vectors...');
+end
 
 TestLabels = [];
 GTLabels = [];
+perSkeletonRandError = NaN(nProcess,1);
+perSkeletonColError = NaN(nProcess,1);
+perSkeletonRowError = NaN(nProcess,1);
 
 for j = 1:nProcess,
     nPoints = size(v{j}, 1);
@@ -57,7 +24,9 @@ for j = 1:nProcess,
                 v{j}(k,1) > 0 && v{j}(k,2) > 0),
             test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
             gt(k) = j; % we just map keyset{j} to j
-            fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
+            if verbose
+                fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
+            end
             inRange = 1;
             % if the current label lies inside a skeleton, we remove it 
             % from the unlabeled set
@@ -68,31 +37,41 @@ for j = 1:nProcess,
     end
     
     if inRange,
-        fprintf('\n');
+        if verbose
+            fprintf('\n');
+        end
         test = test(~isnan(test));
         gt = gt(~isnan(gt));
         TestLabels = [TestLabels; test];
         GTLabels = [GTLabels; gt];
+        
+        tmpTest = remapLabels(TestLabels);
+        tmpGT = remapLabels(GTLabels);
+        [perSkeletonRandError(j) perSkeletonColError(j) perSkeletonRowError(j)] = RandError(tmpTest, tmpGT);
     end
 end
 
 % At this point, the unique set will contain those clusters in fusion that
 % do not have a label from the skeletons
 numUnlabeled = length(keys(UnlabeledM));
-fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
+if verbose
+    fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
+end
 
 TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
 
 % pad TestLabels with a unique name for each segement in Fusion that does
 % not have a skeleton
-TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+%TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+% 
+% % pad GTLabels with 1 name for each segement in GT that does not have a
+% % skeleton
+%GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
-% pad GTLabels with 1 name for each segement in GT that does not have a
-% skeleton
-GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
-
-disp('Done.');
+if verbose
+    disp('Done.');
+end
 
 %% Plot data
 %{
@@ -153,5 +132,15 @@ for j = 1:SLICES
 end
 %}
 %%
-disp('Computing rand error...');
-fprintf('Rand error: %f\n', RandError(TestLabels, GTLabels));
+if verbose
+    disp('Computing rand error...');
+end
+keyboard
+[randerror col row] = RandError(TestLabels, GTLabels);
+if verbose
+    fprintf('Rand error: %f\n', randerror);
+    figure,hist(perSkeletonRandError, 50);
+    fprintf('Avg per-skeleton error: %f\n', avg
+    %figure,hist(perSkeletonColError, 50);
+    %figure,hist(perSkeletonRowError, 50);
+end

@@ -5,7 +5,7 @@ clear all; close all; clc;
 JEFF_DATASET_NAME = 'dataset9Dan';
 SLICES = 8;
 BLP_WEIGHTS_TESS_THRESH = 100;
-VERENA_WEIGHTS_TESS_THRESH = 35;
+VERENA_WEIGHTS_TESS_THRESH = 53;
 WEIGHTS_THRESHOLD = 0;
 
 
@@ -73,11 +73,11 @@ fprintf('Fusion rand error = %.4f merges: %d splits: %d\n\n', randerror(1), row(
 
 %% Read in Verena's data --> "labeled"
 fprintf('Reading Aglomerate clustering data...');
-RUN_VERENA = 1;
-VERENA_WEIGHTS_TESS_THRESH = 38;
-if RUN_VERENA
-    [labeled] = skript_test_for_Amelio(SLICES, VOLUME, VERENA_WEIGHTS_TESS_THRESH);
-end
+%vPath = '../Data/segsForVerena130';
+%if VOLUME == 2
+%    vPath = '../Data/segsForVerena53v2';
+%end
+[labeled] = skript_test_for_Amelio(SLICES, VOLUME, VERENA_B);
 [labeled] = amelio_data_loader(...
     sprintf('../Data/v%d_outputs/verena/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);

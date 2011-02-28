@@ -1,4 +1,4 @@
-function randerror = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v)
+function [randerror col row] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v)
 
 
 verbose = 0;
@@ -10,6 +10,9 @@ end
 
 TestLabels = [];
 GTLabels = [];
+perSkeletonRandError = NaN(nProcess,1);
+perSkeletonColError = NaN(nProcess,1);
+perSkeletonRowError = NaN(nProcess,1);
 
 for j = 1:nProcess,
     nPoints = size(v{j}, 1);
@@ -41,6 +44,10 @@ for j = 1:nProcess,
         gt = gt(~isnan(gt));
         TestLabels = [TestLabels; test];
         GTLabels = [GTLabels; gt];
+        
+        tmpTest = remapLabels(test);
+        tmpGT = remapLabels(gt);
+        [perSkeletonRandError(j) perSkeletonColError(j) perSkeletonRowError(j)] = RandError(tmpTest, tmpGT);
     end
 end
 
@@ -56,11 +63,11 @@ GTLabels = remapLabels(GTLabels);
 
 % pad TestLabels with a unique name for each segement in Fusion that does
 % not have a skeleton
-% TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
+TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)'];
 % 
 % % pad GTLabels with 1 name for each segement in GT that does not have a
 % % skeleton
-% GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
+GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
 if verbose
     disp('Done.');
@@ -128,7 +135,14 @@ end
 if verbose
     disp('Computing rand error...');
 end
-randerror = RandError(TestLabels, GTLabels);
+[randerror col row] = RandError(TestLabels, GTLabels);
+%keyboard
 if verbose
     fprintf('Rand error: %f\n', randerror);
+    %figure,hist(perSkeletonRandError, 50);
+    %perSkeletonRandError = perSkeletonRandError(~isnan(perSkeletonRandError));
+    %avg = sum(perSkeletonRandError)/length(perSkeletonRandError);
+    %fprintf('Avg per-skeleton error: %f\n', avg);
+    %figure,hist(perSkeletonColError, 50);
+    %figure,hist(perSkeletonRowError, 50);
 end
