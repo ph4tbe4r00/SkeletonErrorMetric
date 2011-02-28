@@ -146,5 +146,11 @@ fprintf('MHVS rand error = %.4f\n', randerror(5));
 
 
 figure; bar(randerror);
+ylabel('Unnormalized error rate');
+label = { 'fusion', 'AC', 'B-LP', ...
+       'thresh', 'MHVS'};
+set(gca, 'XTickLabel', label); 
+
 figure; bar(col);
 figure; bar(row);
+
