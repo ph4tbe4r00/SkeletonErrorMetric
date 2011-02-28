@@ -16,6 +16,9 @@ Obj = accumarray({A, B}, ones(N, 1));
 colMistakes = sum(sum(Obj, 1).^2 - sum(Obj.^2, 1))/2;
 rowMistakes = sum(sum(Obj, 2).^2 - sum(Obj.^2, 2))/2;
 
+colMistakes = colMistakes/(N*(N-1)/2);
+rowMistakes = rowMistakes/(N*(N-1)/2);
+
 % divide by number of pairs
-randIndex = (colMistakes + rowMistakes) / (N*(N-1)/2);
+randIndex = (colMistakes + rowMistakes);
 
