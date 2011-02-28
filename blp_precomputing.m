@@ -15,7 +15,7 @@ weightsi = cell(n, 1);
 rag = [];
 weights = [];
 for i = 1:n
-%     fprintf('  %u of %u...  ', i, n);
+    fprintf('  %u of %u...  ', i, n);
     [tessi{i} labi{i} ragi{i} softi{i} weightsi{i}] = ...
         do_things(i, BLP_WEIGHTS_TESS_THRESH, PATH);
     if i > 1
@@ -27,12 +27,11 @@ for i = 1:n
 end
 fprintf('\n');
 
-% keyboard
 
 %%
 weights = weights - mean(weights);
 weights = weights / std(weights);
-weights = weights + 1;
+% weights = weights + 1;
 % weights = 0*weights;
 
 %%
@@ -56,8 +55,10 @@ newweights = newweights - mean(newweights(:));
 newweights = newweights / std(newweights(:));
 newweights(newweights > 4) = 4;
 newweights = exp(newweights);
-% newweights = newweights - 1;
+newweights = newweights - 1;
 %%
+
+% keyboard
 
 weights = [weights; newweights];
 %%
@@ -65,7 +66,7 @@ nNodes = max(rag(:));
 nEdges = size(rag, 1);
 
 
-save(sprintf('blp_weights_tessthresh_%d', BLP_WEIGHTS_TESS_THRESH), ...
+save(sprintf('blp_weights_tessthresh_%d_VOLUME_%d', BLP_WEIGHTS_TESS_THRESH, VOLUME), ...
     'tessi', 'labi', ...
     'ragi', 'weightsi', 'rag', 'weights', ...
     'nNodes', 'nEdges');

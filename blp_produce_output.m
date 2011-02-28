@@ -9,7 +9,7 @@ PATH = '../co_cluster_distrib/Comparisons/';
 
 addpath(PATH);
 
-load(sprintf('blp_weights_tessthresh_%d', BLP_WEIGHTS_TESS_THRESH))
+load(sprintf('blp_weights_tessthresh_%d_VOLUME_%d', BLP_WEIGHTS_TESS_THRESH, VOLUME))
 
 if verbose
     fprintf('  Creating input file...  ');

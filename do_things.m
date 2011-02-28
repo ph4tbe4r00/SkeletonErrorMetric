@@ -1,6 +1,6 @@
 function [tess lab rag soft weights] = do_things(Z, THRESH_VAL, PATH)
 
-tess = imread(sprintf('%stessellations/z=%.6u/wshed_from_h_min/%.3u.png', PATH, Z, THRESH_VAL));
+tess = imread(sprintf('%stessellations/z=%.6u/%.3u.png', PATH, Z, THRESH_VAL));
 lab = bwlabel(~tess, 4);
 rag = imRAG(lab);
 soft = double(imread(sprintf('%sp_bdry/z=%.6u.png', PATH, Z)));
