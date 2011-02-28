@@ -1,8 +1,8 @@
-function blp_precomputing(slices, BLP_WEIGHTS_TESS_THRESH )
+function blp_precomputing(slices, BLP_WEIGHTS_TESS_THRESH, VOLUME)
 
 n = slices;
 
-PATH = '../co_cluster_distrib/Comparisons/'; 
+PATH = sprintf('../Data/v%d_outputs/', VOLUME); 
 % relative path to directory with original images and scripts
 
 addpath(PATH);
@@ -15,7 +15,7 @@ weightsi = cell(n, 1);
 rag = [];
 weights = [];
 for i = 1:n
-    fprintf('  %u of %u...  ', i, n);
+%     fprintf('  %u of %u...  ', i, n);
     [tessi{i} labi{i} ragi{i} softi{i} weightsi{i}] = ...
         do_things(i, BLP_WEIGHTS_TESS_THRESH, PATH);
     if i > 1
@@ -26,6 +26,8 @@ for i = 1:n
     weights = [weights; weightsi{i}];
 end
 fprintf('\n');
+
+% keyboard
 
 %%
 weights = weights - mean(weights);
@@ -52,11 +54,13 @@ end
 %%
 newweights = newweights - mean(newweights(:));
 newweights = newweights / std(newweights(:));
-newweights(newweights > 5) = 5;  % maximum of 5
+newweights(newweights > 4) = 4;  % maximum of 5
 newweights = exp(newweights);
-newweights = newweights - 1;
-weights = [weights; newweights];
+% newweights = newweights - 1;
+%%
 
+weights = [weights; newweights];
+%%
 nNodes = max(rag(:));
 nEdges = size(rag, 1);
 

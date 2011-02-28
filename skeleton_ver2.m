@@ -10,7 +10,7 @@ end
 
 TestLabels = [];
 GTLabels = [];
-keyboard
+
 for j = 1:nProcess,
     nPoints = size(v{j}, 1);
     test = NaN(nPoints, 1);

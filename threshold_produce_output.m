@@ -1,4 +1,4 @@
-function [out] = threshold_produce_output(slices, BLP_WEIGHTS_TESS_THRESH, threshold)
+function [out] = threshold_produce_output(slices, BLP_WEIGHTS_TESS_THRESH, threshold, VOLUME)
 
 n = slices;
 
@@ -52,11 +52,11 @@ origi = cell(n,1);
 rgbi = origi;
 overlayi = origi;
 
-
-OUTPUT_PATH = '../Data/v2_outputs/threshold/';
+OUTPUT_PATH = sprintf('../Data/v%d_outputs/threshold/', VOLUME);
 
 for i = 1:n
-    origi{i} = double(imread(sprintf('../Data/or/z=%.6u.png', 1)));
+    origi{i} = double(imread(sprintf(...
+        '../Data/v%d_outputs/originals/z=%.6u.png', VOLUME, 1)));
     origi{i} = repmat(origi{i}, [1 1 3]) / 255;
     
     rgbi{i} = ind2rgb(labOut(:,:,i), my_map);
@@ -66,3 +66,5 @@ for i = 1:n
     imwrite(rgbi{i}, sprintf('%sfusion/z=%.2u.png', OUTPUT_PATH, i), 'png');
     imwrite(overlayi{i}, sprintf('%sfusion-overlay/z=%.2u.png', OUTPUT_PATH, i), 'png');
 end
+
+
