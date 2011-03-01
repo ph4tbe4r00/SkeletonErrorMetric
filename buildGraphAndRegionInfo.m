@@ -23,11 +23,12 @@ for i=1:SLICES
         avgSize = avgSize + s(j).Area;
     end
     fprintf('Average size: %f\n', avgSize/length(s));
-    
+    avgSize = avgSize/length(s);
     for j=1:length(s)
         cs = round(s(j).Centroid);
         %if (s(j).Area > avgSize/length(s))
-        if (s(j).Area > 100)
+        %if (s(j).Area > 100)
+        if (s(j).Area > avgSize)
             c = [c; [cs(1) cs(2) i double(median(double(im(s(j).PixelIdxList)))) nodeCounter s(j).Area s(j).MajorAxisLength s(j).MinorAxisLength]];
             regionInfo(nodeCounter).PixelIdxList = s(j).PixelIdxList;
             NodeToImgM(int2str(nodeCounter)) = i;

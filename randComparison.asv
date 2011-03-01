@@ -9,11 +9,11 @@ SLICES = 8;
 WEIGHTS_THRESHOLD = 0;
 
 BLP_WEIGHT_TESS_THRESH = [33; 33; 60];
-VERENA_WEIGHTS_TESS_THRESH = [33; 33; 60];
+VERENA_WEIGHTS_TESS_THRESH = [33; 50; 50];
 
 
 %%%%
-VOLUME = 1;
+VOLUME = 2;
 
 volume_offsets = [...
     1-120   1380-120   1928+30   3876+30  ;...
@@ -113,6 +113,8 @@ fprintf('     Done.\n');
 fprintf('Reading b-lp clustering data...');
 %[labeled] = amelio_data_loader(...
 %    sprintf('../Data/v%d_outputs/blp/fusion/', VOLUME), SLICES);
+load(sprintf('../Data/v%d_outputs/blp/blp_vol%d', VOLUME, VOLUME));
+labeled = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -132,6 +134,7 @@ fprintf('     Done.\n');
 fprintf('Reading thresholded-weights clustering data...');
 %[labeled] = amelio_data_loader(...
 %    sprintf('../Data/v%d_outputs/threshold/fusion/', VOLUME), SLICES);
+labeled = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -170,7 +173,13 @@ fprintf('Matching rand error = %.4f\n', randerror(6));
 
 
 %%
+tunedRanderror = [20.4 19.7 9 7.5 7.1];
+figure; bar(tunedRanderror)
+ylabel('Total Percentage of Merge and Split Errors');
+label = {'AC', 'B-LP', 'Fusion-1', 'MHVS', 'Fusion'};
+set(gca, 'XTickLabel', label);
 
+%%
 figure; bar(randerror);
 ylabel('Unnormalized error rate');
 label = { 'fusion', 'AC', 'B-LP', ...

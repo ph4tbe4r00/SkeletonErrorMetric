@@ -81,8 +81,28 @@ if verbose
     fprintf('Num labeled clusters: %d\n', hackhack);
 end
 
+%{
+clusterSize = [];
+unlabeledKeys = keys(UnlabeledM);
+
+for j = 1:size(labeled,3)
+    slice = labeled(:,:,j);
+    for i = 1:length(unlabeledKeys)
+        if ~isempty(find(slice == str2double(unlabeledKeys{i})))
+            clusterSize = [clusterSize; length(find(slice == str2double(unlabeledKeys{i})))];
+        end
+    end
+    labeled(:,:,j) = slice;
+end
+
+maxFracUnlabeled = sum(clusterSize)/(size(labeled,1)*size(labeled,2)*size(labeled,3));
+numUnlabeled = floor(maxFracUnlabeled*hackhack/(1-maxFracUnlabeled));
+%}
+
 TestLabels = remapLabels(TestLabels);
 GTLabels = remapLabels(GTLabels);
+
+fprintf('Normalized numUnlabeled %d\n', numUnlabeled);
 
 % pad TestLabels with a unique name for each segement in Fusion that does
 % not have a skeleton
@@ -118,11 +138,11 @@ if verbose
 end
 
 %% Plot data
-%{
+
 disp('Overlaying skeletons on fusion output...');
 for j = 1:1
     img = imread(sprintf(...
-        '../Data/v%d_outputs/amelio/fusion_overlay/z=%.2d.png', 3, j));
+        '../Data/v%d_outputs/mhvs/fusion-overlay/z=%.2d.png', 4, j));
     figure, imshow(img, 'InitialMagnification', 300);
     hold on;
     for i=1:nProcess,
@@ -147,9 +167,9 @@ for j = 1:1
         end
     end
 end
-%}
+
 %% Plot original
-%{
+
 for j = 1:1
     img = imread(sprintf(...
         '../Data/jeff_originals/%d.tif', j));
@@ -174,7 +194,7 @@ for j = 1:1
         end
     end
 end
-%}
+
 %%
 if verbose
     disp('Computing rand error...');

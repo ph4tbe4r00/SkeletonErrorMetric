@@ -18,19 +18,21 @@ weightMatrixDist = buildGraphWeightMatrixDist(graphInfo, regionInfo);
 disp('clustering');
 %clustering will halt if either maximum number of iterations (maxIter)
 %or maximum cost for merges (maxCost) is reached
-maxIter = 100; 
+
+
+%load(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
+maxIter = 1000; 
 maxCost = inf;
 %clusterIds is a vector of length n, which contains the object id for
 %each of the n regions in the volume
 tic;[clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBranching(weightMatrixDist, maxIter, graphInfo, maxCost);toc;
-
 %%
 save(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
-
 %%
 load(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
 
 %% Display data
+
 tmptmp = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
 orgImgs = zeros(size(tmptmp,1), size(tmptmp,2), 3);
 for i = 1:n

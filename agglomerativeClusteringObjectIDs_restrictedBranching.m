@@ -49,7 +49,7 @@ function [clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBra
       max(i2-i1)
       clear i1 i2 tmp1 tmp2
       
-      save(strcat('clusterIds_minCosts_',imageFileName(counter),'.mat'),'clusterIds','minCosts');
+      save(strcat('clusterIds_minCosts_',int2str(counter),'.mat'),'clusterIds','minCosts');
       tic;
     end
 

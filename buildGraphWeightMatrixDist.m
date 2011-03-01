@@ -52,9 +52,9 @@ for i=1:length(graphInfo);
 end
 
 %tmp = weightMatrix(find(weightMatrix(:)~= 0));
-weightMatrix = weightMatrix - mean(weightMatrix(:));
-weightMatrix = weightMatrix ./ std(weightMatrix(:));
-weightMatrix = exp(weightMatrix);
+%weightMatrix = weightMatrix - mean(weightMatrix(:));
+%weightMatrix = weightMatrix ./ sqrt(std(weightMatrix(:)));
+%weightMatrix = exp(weightMatrix);
 %size(weightMatrix)
 
 %sanity check.. matrix has to be symmetric

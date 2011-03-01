@@ -1,18 +1,29 @@
 function [labeled] = threshholdStuff(labeled)
 
-ThRESH = 300;
+ThRESH = 45;
 
 unlabeledKeys = unique(labeled);
-        for j = 1:size(labeled,3)
-        for i = 1:length(unlabeledKeys)
-
-        slice = labeled(:,:,j);
-        
-        if length(find(slice == unlabeledKeys(i))) < ThRESH
-            keyboard
-            slice( slice == unlabeledKeys(i)) = -1;
-        end            
+%{
+clusterSize = [];
+for j = 1:size(labeled,3)
+    slice = labeled(:,:,j);
+    for i = 1:length(unlabeledKeys)
+        if ~isempty(find(slice == unlabeledKeys(i)))
+            clusterSize = [clusterSize; length(find(slice == unlabeledKeys(i)))];
+        end
     end
+end
+%}
+
+for j = 1:size(labeled,3)
+    slice = labeled(:,:,j);
+    for i = 1:length(unlabeledKeys)
+        if length(find(slice == unlabeledKeys(i))) < ThRESH
+            slice( slice == unlabeledKeys(i)) = -1;
+            disp(
+        end
+    end
+    labeled(:,:,j) = slice;
 end
 
 end

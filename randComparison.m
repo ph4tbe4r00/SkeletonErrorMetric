@@ -2,27 +2,27 @@ clear all; close all; clc;
 
 % compute rand errors for 5 different methods:
 % fusion, verena, b-lp, thresholded weights, MHVS
-JEFF_DATASET_NAME = 'dataset9Dan2';
+JEFF_DATASET_NAME = 'dataset9Dan3';
 SLICES = 8;
 %BLP_WEIGHTS_TESS_THRESH = 33;
 %VERENA_WEIGHTS_TESS_THRESH = 33;
 WEIGHTS_THRESHOLD = 0;
 
 BLP_WEIGHT_TESS_THRESH = [33; 33; 60];
-VERENA_WEIGHTS_TESS_THRESH = [33; 33; 60];
+VERENA_WEIGHTS_TESS_THRESH = [33; 50; 60];
 
 
 %%%%
-VOLUME = 2;
+VOLUME = 3;
 
 volume_offsets = [...
     1-120   1380-120   1928+30   3876+30  ;...
     1546    3018       2243      3627     ;...
     1252    3252       31      2031       ;...
-    ];
+    3584    4328       454      1558];
 
-volume_crops = [300; 0; 0];
-volume_downsamples = [4; 4; 4];
+volume_crops = [300; 0; 0; 0];
+volume_downsamples = [4; 4; 4; 4];
     
 
 %%%%
@@ -74,7 +74,7 @@ UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('  (#UL = %d)\n', length(keys(UnlabeledM)));
 
-[randerror(1) col(1) row(1)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal);
+[randerror(1) col(1) row(1)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
 fprintf('Fusion rand error = %.4f merges: %d splits: %d\n\n', randerror(1), row(1), col(1));
 
 
@@ -94,7 +94,7 @@ labeled = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('  (#UL = %d)\n', length(keys(UnlabeledM)));
-[randerror(2) col(2) row(2)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal);
+[randerror(2) col(2) row(2)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
 fprintf('Verena rand error = %.4f merges: %d splits: %d\n\n', randerror(2), row(2), col(2));
 
 
@@ -114,7 +114,8 @@ fprintf('Reading b-lp clustering data...');
 %[labeled] = amelio_data_loader(...
 %    sprintf('../Data/v%d_outputs/blp/fusion/', VOLUME), SLICES);
 load(sprintf('../Data/v%d_outputs/blp/blp_vol%d', VOLUME, VOLUME));
-labeled = threshholdStuff(labeled);
+load(sprintf('../Data/v%d_outputs/blp/blp_TH_50_VOL_%d', VOLUME, VOLUME));
+[labeled] = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -134,7 +135,7 @@ fprintf('     Done.\n');
 fprintf('Reading thresholded-weights clustering data...');
 %[labeled] = amelio_data_loader(...
 %    sprintf('../Data/v%d_outputs/threshold/fusion/', VOLUME), SLICES);
-labeled = threshholdStuff(labeled);
+[labeled] = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -150,12 +151,12 @@ fprintf('Threshold rand error = %.4f\n', randerror(4));
 fprintf('Computing MHVS clustering...');
 [labeled] = amelio_data_loader(...
     sprintf('../Data/v%d_outputs/mhvs/fusion/', VOLUME), SLICES);
-labeled = threshholdStuff(labeled);
+[labeled] = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
 
-[randerror(5) col(5) row(5)]= skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+[randerror(5) col(5) row(5)]= skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal);
 fprintf('MHVS rand error = %.4f\n', randerror(5));
 
 
@@ -163,7 +164,7 @@ fprintf('MHVS rand error = %.4f\n', randerror(5));
 fprintf('Computing Matching clustering...');
 [labeled] = amelio_data_loader(...
     sprintf('../Data/v%d_outputs/matching/fusion/', VOLUME), SLICES);
-labeled = threshholdStuff(labeled);
+[labeled] = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -173,7 +174,13 @@ fprintf('Matching rand error = %.4f\n', randerror(6));
 
 
 %%
+tunedRanderror = [20.4 18.2 8.9 8.2 7.5];
+figure; bar(tunedRanderror)
+ylabel('Total Percentage of Merge and Split Errors');
+label = {'AC', 'B-LP', 'Fusion-1', 'MHVS', 'Fusion'};
+set(gca, 'XTickLabel', label);
 
+%%
 figure; bar(randerror);
 ylabel('Unnormalized error rate');
 label = { 'fusion', 'AC', 'B-LP', ...
