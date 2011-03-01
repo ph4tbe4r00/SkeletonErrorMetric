@@ -1,4 +1,5 @@
 function [out] = skript_test_for_Amelio(n, VOLUME, TESSLEVEL)
+
 verbose = 1;
 
 %currDir = pwd;
@@ -23,11 +24,17 @@ maxCost = inf;
 %each of the n regions in the volume
 tic;[clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBranching(weightMatrixDist, maxIter, graphInfo, maxCost);toc;
 
+%%
+save(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
+
+%%
+load(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
+
 %% Display data
 tmptmp = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
 orgImgs = zeros(size(tmptmp,1), size(tmptmp,2), 3);
 for i = 1:n
-    orgImgs(:,:,i) = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
+    orgImgs(:,:,i) = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, i, TESSLEVEL));
 end
 for i = 1:n
     seg = orgImgs(:,:,i);
@@ -73,12 +80,25 @@ for i = 1:n
     origi{i} = repmat(origi{i}, [1 1 3]) / 255;
     
     rgbi{i} = ind2rgb(labOut(:,:,i), my_map);
+    
+    %rchannel = int32(mod(labOut(:,:,i), 256));
+    %gchannel = mod(idivide(int32(labOut(:,:,i)),256), 256);
+    %bchannel = mod(idivide(int32(labOut(:,:,i)),256*256), 256);
+    
+    %rgbi{i} = zeros(size(tmptmp,1), size(tmptmp,2), 3);
+    %size(rgbi{i})
+    %rgbi{i}(:,:,1) = rchannel / 255;
+    %rgbi{i}(:,:,2) = gchannel / 255;
+    %rgbi{i}(:,:,3) = bchannel / 255;
+    
     overlayi{i} = alpha*origi{i} + (1-alpha)*rgbi{i};
-
+    
     imwrite(rgbi{i}, sprintf('%sfusion/z=%.2u.png', OUTPUT_PATH, i), 'png');
     imwrite(overlayi{i}, sprintf('%sfusion-overlay/z=%.2u.png', OUTPUT_PATH, i), 'png');
 end
 
+
+%%
 %%
 %{
 %this part builds an image volume of the clustering solution, for visualization

@@ -2,28 +2,33 @@ clear all; close all; clc;
 
 % compute rand errors for 5 different methods:
 % fusion, verena, b-lp, thresholded weights, MHVS
-JEFF_DATASET_NAME = 'dataset9Dan';
+JEFF_DATASET_NAME = 'dataset9Dan2';
 SLICES = 8;
-BLP_WEIGHTS_TESS_THRESH = 100;
-VERENA_WEIGHTS_TESS_THRESH = 53;
+%BLP_WEIGHTS_TESS_THRESH = 33;
+%VERENA_WEIGHTS_TESS_THRESH = 33;
 WEIGHTS_THRESHOLD = 0;
+
+BLP_WEIGHT_TESS_THRESH = [33; 33; 60];
+VERENA_WEIGHTS_TESS_THRESH = [33; 33; 60];
 
 
 %%%%
-VOLUME = 2;
+VOLUME = 1;
 
 volume_offsets = [...
     1-120   1380-120   1928+30   3876+30  ;...
     1546    3018       2243      3627     ;...
+    1252    3252       31      2031       ;...
     ];
 
-volume_crops = [300; 0];
-volume_downsamples = [4; 4];
+volume_crops = [300; 0; 0];
+volume_downsamples = [4; 4; 4];
     
 
 %%%%
 
 %% Read in Piet data 
+
 fprintf('Reading XMLs...');
 breadcrumbsOffset = containers.Map();
 breadcrumbsOriginal = containers.Map();
@@ -49,10 +54,11 @@ vOriginal = values(breadcrumbsOriginal);
 
 fprintf('    Done.\n\n')
 
+%%
+save(sprintf('Skeletons_VOLUME%d', VOLUME));
 
-
-
-
+%%
+load(sprintf('Skeletons_VOLUME%d', VOLUME));
 
 
 %% Read in Amelio's data --> "labeled"
@@ -61,29 +67,34 @@ AMELIO_FUSION = 5;
 fprintf('Reading fusion data...');
 [labeled] = amelio_data_loader(...
     sprintf('../Data/v%d_outputs/amelio/fusion/', VOLUME), SLICES);
+
+labeled = threshholdStuff(labeled);
+
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('  (#UL = %d)\n', length(keys(UnlabeledM)));
 
-[randerror(1) col(1) row(1)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+[randerror(1) col(1) row(1)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal);
 fprintf('Fusion rand error = %.4f merges: %d splits: %d\n\n', randerror(1), row(1), col(1));
-
 
 
 
 %% Read in Verena's data --> "labeled"
 fprintf('Reading Aglomerate clustering data...');
-%vPath = '../Data/segsForVerena130';
-%if VOLUME == 2
-%    vPath = '../Data/segsForVerena53v2';
-%end
-[labeled] = skript_test_for_Amelio(SLICES, VOLUME, VERENA_B);
-[labeled] = amelio_data_loader(...
-    sprintf('../Data/v%d_outputs/verena/fusion/', VOLUME), SLICES);
+RUN_VERENA = 1;
+%VERENA_WEIGHTS_TESS_THRESH(VOLUME) = 50;
+if RUN_VERENA
+    [labeled] = skript_test_for_Amelio(SLICES, VOLUME, VERENA_WEIGHTS_TESS_THRESH(VOLUME));
+end
+labeled = threshholdStuff(labeled);
+%%
+%[labeled] = amelio_data_loader(...
+%    sprintf('../Data/v%d_outputs/verena/fusion/', VOLUME), SLICES);
+%%
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('  (#UL = %d)\n', length(keys(UnlabeledM)));
-[randerror(2) col(2) row(2)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+[randerror(2) col(2) row(2)] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal);
 fprintf('Verena rand error = %.4f merges: %d splits: %d\n\n', randerror(2), row(2), col(2));
 
 
@@ -92,16 +103,16 @@ fprintf('Verena rand error = %.4f merges: %d splits: %d\n\n', randerror(2), row(
 
 %% Read in b-lp data
 fprintf('Computing b-lp weights (for b-lp and threshold)...');
-blp_precomputing(SLICES, BLP_WEIGHTS_TESS_THRESH, VOLUME);
+blp_precomputing(SLICES, BLP_WEIGHTS_TESS_THRESH(VOLUME), VOLUME);
 fprintf('     Done.\n');
 %%
 fprintf('Computing b-lp clustering...');
-blp_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH, VOLUME);
+labeled = blp_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH(VOLUME), VOLUME);
 fprintf('     Done.\n');
 %%
 fprintf('Reading b-lp clustering data...');
-[labeled] = amelio_data_loader(...
-    sprintf('../Data/v%d_outputs/blp/fusion/', VOLUME), SLICES);
+%[labeled] = amelio_data_loader(...
+%    sprintf('../Data/v%d_outputs/blp/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -115,12 +126,12 @@ fprintf('B-LP rand error = %.4f\n\n', randerror(3));
 
 %% Read in weights-threshold data
 fprintf('Computing thresholded-weights clustering...')
-threshold_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH, WEIGHTS_THRESHOLD, VOLUME);
+labeled = threshold_produce_output(SLICES, BLP_WEIGHTS_TESS_THRESH, WEIGHTS_THRESHOLD, VOLUME);
 fprintf('     Done.\n');
 %%
 fprintf('Reading thresholded-weights clustering data...');
-[labeled] = amelio_data_loader(...
-    sprintf('../Data/v%d_outputs/threshold/fusion/', VOLUME), SLICES);
+%[labeled] = amelio_data_loader(...
+%    sprintf('../Data/v%d_outputs/threshold/fusion/', VOLUME), SLICES);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -136,6 +147,7 @@ fprintf('Threshold rand error = %.4f\n', randerror(4));
 fprintf('Computing MHVS clustering...');
 [labeled] = amelio_data_loader(...
     sprintf('../Data/v%d_outputs/mhvs/fusion/', VOLUME), SLICES);
+labeled = threshholdStuff(labeled);
 UnlabeledM = get_unlabeled(labeled, SLICES);
 fprintf('     Done.');
 fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
@@ -144,7 +156,27 @@ fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
 fprintf('MHVS rand error = %.4f\n', randerror(5));
 
 
+%% Read in Matching data
+fprintf('Computing Matching clustering...');
+[labeled] = amelio_data_loader(...
+    sprintf('../Data/v%d_outputs/matching/fusion/', VOLUME), SLICES);
+labeled = threshholdStuff(labeled);
+UnlabeledM = get_unlabeled(labeled, SLICES);
+fprintf('     Done.');
+fprintf('   (#UL = %d)\n', length(keys(UnlabeledM)));
+
+[randerror(6) col(6) row(6)]= skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v);
+fprintf('Matching rand error = %.4f\n', randerror(6));
+
+
+%%
 
 figure; bar(randerror);
+ylabel('Unnormalized error rate');
+label = { 'fusion', 'AC', 'B-LP', ...
+       'thresh', 'MHVS'};
+set(gca, 'XTickLabel', label); 
+
 figure; bar(col);
 figure; bar(row);
+

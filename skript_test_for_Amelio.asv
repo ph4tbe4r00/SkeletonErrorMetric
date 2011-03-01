@@ -1,35 +1,15 @@
-
+function [out] = skript_test_for_Amelio(n, VOLUME, TESSLEVEL)
+verbose = 1;
+%{
+%currDir = pwd;
 %extract graph and region info
-system('cd ../Data/segsForVerena130');
-imgNames = dir('I00000*_seg.png');
-system('cd ../');
-[graphInfo, regionInfo, NodeToImgM] = buildGraphAndRegionInfo(imgNames);
+%cd(vPath);
+%imgNames = dir('I00000*_seg.png');
+%cd(currDir);
+[graphInfo, regionInfo, NodeToImgM] = buildGraphAndRegionInfo(VOLUME, n, TESSLEVEL);
 
-save('graphInfo.mat','graphInfo');
-save('regionInfo.mat','regionInfo');
-save('NodeToImgM.mat','NodeToImgM');
-
-%extract distance matrix as an example. I assume you substitute this
-%with your own weights.
-clear all
 disp('building weight Matrix');
-load regionInfo.mat
-load graphInfo.mat
-tic;
-disp('weightMatrixDist');
 weightMatrixDist = buildGraphWeightMatrixDist(graphInfo, regionInfo);
-save('weightMatrixDist.mat','weightMatrixDist');
-clear weightMatrixDist;
-toc;
-
-
-%cluster according to weightMatrix
-%clear all
-
-load graphInfo.mat
-load regionInfo.mat
-load weightMatrixDist.mat
-load NodeToImgM.mat   
 
 % We're gonna use our own weight matrix ... so we don't need the top?
 % Let's test it out with her Euclidean distance matrix first ...
@@ -43,13 +23,19 @@ maxCost = inf;
 %each of the n regions in the volume
 tic;[clusterIds, minCosts] = agglomerativeClusteringObjectIDs_restrictedBranching(weightMatrixDist, maxIter, graphInfo, maxCost);toc;
 
+%%
+save(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
+%}
+%%
+load(sprintf('VerenaClusterIds_VOLUME%d', VOLUME));
+
 %% Display data
-orgImgs = zeros(276, 195, 3);
-for i = 1:8
-    orgImgs(:,:,i) = imread(sprintf('I00000%d_seg.png', i));
+tmptmp = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
+orgImgs = zeros(size(tmptmp,1), size(tmptmp,2), 3);
+for i = 1:n
+    orgImgs(:,:,i) = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', VOLUME, 1, TESSLEVEL));
 end
-NodeToImgM
-for i = 1:8
+for i = 1:n
     seg = orgImgs(:,:,i);
     for j = 1:length(clusterIds)
         if NodeToImgM(int2str(j)) == i
@@ -63,12 +49,56 @@ my_map = jet(length(clusterIds));
 my_map = my_map(randperm(size(my_map, 1)),:);
 
 figure;
-for i = 1:8
+for i = 1:n
     subplot(1,8,i);
     imshow(ind2rgb(orgImgs(:,:,i), my_map));
 end
 
+%%
+if verbose
+    fprintf('  Writing images...  ');
+end
 
+labOut = orgImgs;
+out = orgImgs;
+
+my_map = jet(max(labOut(:)));
+my_map = my_map(randperm(size(my_map, 1)),:);
+alpha = .75;
+
+origi = cell(n,1);
+rgbi = origi;
+overlayi = origi;
+
+
+OUTPUT_PATH = sprintf('../Data/v%d_outputs/verena/', VOLUME);
+
+for i = 1:n
+    origi{i} = double(imread(sprintf(...
+        '../Data/v%d_outputs/originals/z=%.6u.png', VOLUME, 1)));
+    origi{i} = repmat(origi{i}, [1 1 3]) / 255;
+    
+    rgbi{i} = ind2rgb(labOut(:,:,i), my_map);
+    
+    keyboard
+    
+    rchannel = int32(mod(labOut(:,:,i), 256));
+    gchannel = mod(idivide(int32(labOut(:,:,i)),256), 256);
+    bchannel = mod(idivide(int32(labOut(:,:,i)),256*256), 256);
+    rgbi{i} = zeros(size(origi,1), size(origi,2), 3);
+    size(rgbi{i})
+    rgbi{i}(:,:,1) = rchannel;
+    rgbi{i}(:,:,2) = gchannel;
+    rgbi{i}(:,:,3) = bchannel;
+    
+    overlayi{i} = alpha*origi{i} + (1-alpha)*rgbi{i};
+
+    imwrite(rgbi{i}, sprintf('%sfusion/z=%.2u.png', OUTPUT_PATH, i), 'png');
+    imwrite(overlayi{i}, sprintf('%sfusion-overlay/z=%.2u.png', OUTPUT_PATH, i), 'png');
+end
+
+
+%%
 %%
 %{
 %this part builds an image volume of the clustering solution, for visualization

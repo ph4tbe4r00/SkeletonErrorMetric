@@ -1,7 +1,7 @@
-function [randerror col row] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v)
+function [randerror col row] = skeleton_ver2(labeled, UnlabeledM, nProcess, keyset, v, vOriginal)
 
 
-verbose = 0;
+verbose = 1;
 
 %% Compute rand error
 if verbose
@@ -14,6 +14,22 @@ perSkeletonRandError = NaN(nProcess,1);
 perSkeletonColError = NaN(nProcess,1);
 perSkeletonRowError = NaN(nProcess,1);
 
+%{
+length(unlabeledKeys)
+for i = 1:length(unlabeledKeys)
+    for j = 1:size(labeled,3)
+        if isKey(UnlabeledM, unlabeledKeys{i})
+            
+            if length(find(labeled(:,:,j) == str2int(unlabeledKeys{i}))) < 200,
+                if isKey(UnlabeledM, unlabeledKeys{i})
+                    remove(UnlabeledM, unlabeledKeys{i});
+                end
+            end
+        end
+    end
+end
+%}
+hackhack = 0;
 for j = 1:nProcess,
     nPoints = size(v{j}, 1);
     test = NaN(nPoints, 1);
@@ -21,8 +37,10 @@ for j = 1:nProcess,
     inRange = 0;
     for k = 1:nPoints,
         if (v{j}(k,1) < size(labeled,2) && v{j}(k,2) < size(labeled,1) && ...
-                v{j}(k,1) > 0 && v{j}(k,2) > 0),
+                v{j}(k,1) > 0 && v{j}(k,2) > 0) %...
+          %      && length(find(labeled(:,:,v{j}(k,3)) == labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3)))) > 100, % threshhold
             test(k) = labeled(v{j}(k,2), v{j}(k,1), v{j}(k,3));
+
             gt(k) = j; % we just map keyset{j} to j
             if verbose
                 fprintf('%s Label: %d Iteration: %d\n', keyset{j}, test(k), k);
@@ -32,11 +50,13 @@ for j = 1:nProcess,
             % from the unlabeled set
             if isKey(UnlabeledM, int2str(test(k))),
                 remove(UnlabeledM, int2str(test(k)));
+                hackhack = hackhack+1;
             end
         end
     end
     
     if inRange,
+
         if verbose
             fprintf('\n');
         end
@@ -50,12 +70,15 @@ for j = 1:nProcess,
         [perSkeletonRandError(j) perSkeletonColError(j) perSkeletonRowError(j)] = RandError(tmpTest, tmpGT);
     end
 end
+hackhack
 
 % At this point, the unique set will contain those clusters in fusion that
 % do not have a label from the skeletons
+
 numUnlabeled = length(keys(UnlabeledM));
 if verbose
     fprintf('Num unlabeled clusters: %d\n', numUnlabeled);
+    fprintf('Num labeled clusters: %d\n', hackhack);
 end
 
 TestLabels = remapLabels(TestLabels);
@@ -69,6 +92,27 @@ TestLabels = [TestLabels; (length(TestLabels):length(TestLabels)+numUnlabeled-1)
 % % skeleton
 GTLabels = [GTLabels; length(GTLabels)*ones(numUnlabeled,1)];
 
+%{
+tmptmp = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', 2, 1, 33));
+orgImgs = zeros(size(tmptmp,1), size(tmptmp,2), 3);
+for i = 1:size(labeled,3)
+    orgImgs(:,:,i) = imread(sprintf('../Data/v%d_outputs/tessellations/z=%.6u/%.3u.png', 2, i, 33));
+end
+my_map = jet(length(unique(labeled)));
+my_map = my_map(randperm(size(my_map, 1)),:);
+
+rgbi = cell(size(labeled,3),1);
+for i = 1:size(labeled,3)
+    rgbi{i} = ind2rgb(labeled(:,:,i), my_map);
+end
+
+figure;
+for i = 1:size(labeled,3)
+    subplot(1,size(labeled,3),i);
+    imshow(rgbi{i});
+end
+%}
+
 if verbose
     disp('Done.');
 end
@@ -76,9 +120,9 @@ end
 %% Plot data
 %{
 disp('Overlaying skeletons on fusion output...');
-for j = 1:SLICES
+for j = 1:1
     img = imread(sprintf(...
-        '../Data/amelio-fusion-%d/fusion_overlay/z=%.2d.png', AMELIO_FUSION, j));
+        '../Data/v%d_outputs/amelio/fusion_overlay/z=%.2d.png', 3, j));
     figure, imshow(img, 'InitialMagnification', 300);
     hold on;
     for i=1:nProcess,
@@ -106,7 +150,7 @@ end
 %}
 %% Plot original
 %{
-for j = 1:SLICES
+for j = 1:1
     img = imread(sprintf(...
         '../Data/jeff_originals/%d.tif', j));
     figure, imshow(img, 'InitialMagnification', 25);
